@@ -15,7 +15,7 @@ export default function LocaisPage() {
     <CampaignPageShell title="Locais">
       <div className="space-y-12">
         <p className="text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-          <CampaignRichText text="Cidades e regiões do mundo de Aethel. Mesmo layout da página Pessoas: mapa à esquerda ou à direita em linhas alternadas; clique no mapa para ampliar com zoom." />
+          <CampaignRichText text="Cidades e regiões do mundo de Aethel. Clique no mapa para ampliar com zoom." />
         </p>
         <AlternatingImageTextList items={items} entityBasePath="/locais" />
       </div>
