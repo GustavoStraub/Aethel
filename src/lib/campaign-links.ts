@@ -1,3 +1,4 @@
+import { characters } from "@/data/characters";
 import { factions } from "@/data/factions";
 import { locations } from "@/data/locations";
 import { people } from "@/data/people";
@@ -20,6 +21,9 @@ export function getCampaignLinkRules(): CampaignLinkRule[] {
 
   for (const p of people) {
     rules.push({ label: p.name, href: `/pessoas#${p.id}` });
+  }
+  for (const c of characters) {
+    rules.push({ label: c.name, href: `/personagens#${c.id}` });
   }
   for (const l of locations) {
     rules.push({ label: l.title, href: `/locais#${l.id}` });

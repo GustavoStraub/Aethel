@@ -2,9 +2,7 @@ import Head from "next/head";
 import { Geist } from "next/font/google";
 import { CampaignLinkCards } from "@/components/CampaignLinkCards";
 import { CampaignRichText } from "@/components/CampaignRichText";
-import { CharactersHeader } from "@/components/CharactersHeader";
 import { WorldMapZoomModal } from "@/components/WorldMapZoomModal";
-import { characters } from "@/data/characters";
 import { siteContentWidthClass } from "@/lib/siteLayout";
 
 const geistSans = Geist({
@@ -21,8 +19,6 @@ export default function Home() {
       <div
         className={`${geistSans.className} flex min-h-screen flex-col bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50`}
       >
-        <CharactersHeader characters={characters} />
-
         <main className="flex flex-1 flex-col">
           <section className="w-full shrink-0 border-b border-zinc-200 bg-white/80 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
             <div className={`${siteContentWidthClass} py-6`}>

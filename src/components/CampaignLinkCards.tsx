@@ -8,6 +8,12 @@ const items = [
       "Anotações de cada sessão de jogo: recapitulações, ganchos e o que descobriram.",
   },
   {
+    href: "/personagens",
+    title: "Personagens",
+    description:
+      "Os aventureiros do grupo: retratos e histórias dos personagens jogáveis.",
+  },
+  {
     href: "/pessoas",
     title: "Pessoas",
     description:
@@ -29,7 +35,7 @@ const items = [
 
 export function CampaignLinkCards() {
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {items.map((item) => (
         <li key={item.href}>
           <Link

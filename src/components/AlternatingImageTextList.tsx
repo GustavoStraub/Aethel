@@ -17,7 +17,7 @@ export type AlternatingImageTextItem = {
   paragraphs: string[];
 };
 
-type EntityListBasePath = "/pessoas" | "/locais" | "/faccoes";
+type EntityListBasePath = "/pessoas" | "/personagens" | "/locais" | "/faccoes";
 
 type AlternatingImageTextListProps = {
   items: AlternatingImageTextItem[];
