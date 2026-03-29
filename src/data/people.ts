@@ -56,7 +56,7 @@ export const people: PersonEntry[] = [
       sizes: "(max-width: 768px) 90vw, (max-width: 1024px) 45vw, 400px",
     },
     paragraphs: [
-      "Amigo de Samus, encontrado preso em um posto da cidade de Khenza.",
+      "Amigo de Samus, e membro da Plebe Rude, encontrado preso em um posto da cidade de Khenza.",
       'Seu crime era tentativa de roubo.',
       'O grupo o soltou.'
     ],
@@ -72,7 +72,7 @@ export const people: PersonEntry[] = [
       sizes: "(max-width: 768px) 90vw, (max-width: 1024px) 45vw, 400px",
     },
     paragraphs: [
-      "Amiga de Samus, encontrado preso em um posto da cidade de Khenza.",
+      "Amiga de Samus, e membro da Plebe Rude, encontrado preso em um posto da cidade de Khenza.",
       'Seu crime era latrocínio.',
       'O grupo o soltou.'
     ],
@@ -88,7 +88,7 @@ export const people: PersonEntry[] = [
       sizes: "(max-width: 768px) 90vw, (max-width: 1024px) 45vw, 400px",
     },
     paragraphs: [
-      "Amigo de Samus, encontrado preso em um posto da cidade de Khenza.",
+      "Amigo de Samus, e membro da Plebe Rude, encontrado preso em um posto da cidade de Khenza.",
       'Seu crime era latrocínio.',
       'O grupo o soltou.'
     ],
