@@ -1,3 +1,5 @@
+"use client";
+
 import { CampaignPageShell } from "@/components/CampaignPageShell";
 import { SessionBook } from "@/components/SessionBook";
 import { sessions } from "@/data/sessions";
