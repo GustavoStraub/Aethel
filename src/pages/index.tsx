@@ -40,7 +40,7 @@ export default function Home() {
                   <p>
                     <CampaignRichText
                       text={
-                        "Athel é um mundo de possibilidades infinitas. Das metrópoles flutuantes governadas por magos arcano-democráticos às profundezas esquecidas do Subterrâneo, onde Drows e Anões travam guerras milenares. É um lugar onde o rugido de um dragão antigo é tão comum quanto o som das harpas nas cortes das fadas, e onde o destino de reinos inteiros é decidido tanto no fio da espada quanto em contratos infernais."
+                        "Aethel é um mundo de possibilidades infinitas. Das metrópoles flutuantes governadas por magos arcano-democráticos às profundezas esquecidas do Subterrâneo, onde Drows e Anões travam guerras milenares. É um lugar onde o rugido de um dragão antigo é tão comum quanto o som das harpas nas cortes das fadas, e onde o destino de reinos inteiros é decidido tanto no fio da espada quanto em contratos infernais."
                       }
                     />
                   </p>
@@ -55,7 +55,7 @@ export default function Home() {
                     <CampaignRichText text="Contudo, sussurros sondam os continentes…" />
                   </p>
                   <p className="italic text-zinc-600 dark:text-zinc-400">
-                    <CampaignRichText text="O destino de Athel está sendo escrito." />
+                    <CampaignRichText text="O destino de Aethel está sendo escrito." />
                   </p>
                 </div>
               </div>
