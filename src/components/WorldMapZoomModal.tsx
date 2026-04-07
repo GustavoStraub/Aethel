@@ -7,7 +7,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type WheelEvent,
 } from "react";
 import { createPortal } from "react-dom";
 
@@ -58,10 +57,23 @@ export function WorldMapZoomModal({
   const [zoom, setZoom] = useState(1);
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
   const scrollRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(zoom);
+
+  /** Pinch: distância inicial, zoom no início, scroll inicial (mobile). */
+  const pinchRef = useRef<{
+    dist: number;
+    zoom: number;
+    scrollL: number;
+    scrollT: number;
+  } | null>(null);
 
   const close = useCallback(() => {
     setOpen(false);
   }, []);
+
+  useLayoutEffect(() => {
+    zoomRef.current = zoom;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -129,11 +141,72 @@ export function WorldMapZoomModal({
     return () => cancelAnimationFrame(id);
   }, [open, zoom, viewport.w, viewport.h, fitScale, displayW, displayH]);
 
-  const onWheelScroll = useCallback((e: WheelEvent<HTMLDivElement>) => {
-    if (!e.ctrlKey && !e.metaKey) return;
-    e.preventDefault();
-    setZoom((z) => clampZoom(z - e.deltaY * 0.002));
-  }, []);
+  /** Pinch (mobile) + roda do mouse (wheel com passive: false para o zoom). */
+  useEffect(() => {
+    if (!open) {
+      pinchRef.current = null;
+      return;
+    }
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      const t0 = e.touches[0];
+      const t1 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+      pinchRef.current = {
+        dist,
+        zoom: zoomRef.current,
+        scrollL: el.scrollLeft,
+        scrollT: el.scrollTop,
+      };
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length < 2 || !pinchRef.current) return;
+      e.preventDefault();
+      const t0 = e.touches[0];
+      const t1 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+      if (dist < 1) return;
+
+      const start = pinchRef.current;
+      const ratio = dist / start.dist;
+      const newZoom = clampZoom(start.zoom * ratio);
+      const zr = newZoom / start.zoom;
+
+      const rect = el.getBoundingClientRect();
+      const mx = (t0.clientX + t1.clientX) / 2 - rect.left;
+      const my = (t0.clientY + t1.clientY) / 2 - rect.top;
+
+      el.scrollLeft = start.scrollL + (mx - el.clientWidth / 2) * (zr - 1);
+      el.scrollTop = start.scrollT + (my - el.clientHeight / 2) * (zr - 1);
+      setZoom(newZoom);
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) pinchRef.current = null;
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom((z) => clampZoom(z - e.deltaY * 0.002));
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, [open]);
 
   const modal =
     open &&
@@ -172,9 +245,10 @@ export function WorldMapZoomModal({
                 <button
                   type="button"
                   onClick={() => setZoom(1)}
-                  className="hidden px-2 text-xs text-zinc-400 hover:text-zinc-200 sm:inline"
+                  className="px-1.5 text-[11px] text-zinc-400 hover:text-zinc-200 sm:px-2 sm:text-xs"
                 >
-                  Ajustar à tela
+                  <span className="sm:hidden">Ajustar</span>
+                  <span className="hidden sm:inline">Ajustar à tela</span>
                 </button>
                 <button
                   type="button"
@@ -215,8 +289,7 @@ export function WorldMapZoomModal({
 
           <div
             ref={scrollRef}
-            className="min-h-0 min-w-0 flex-1 basis-0 overflow-auto touch-pan-x touch-pan-y"
-            onWheel={onWheelScroll}
+            className="min-h-0 min-w-0 flex-1 basis-0 overflow-auto overscroll-contain touch-pan-x touch-pan-y [-webkit-overflow-scrolling:touch]"
           >
             <div className="flex min-h-full min-w-full items-center justify-center p-4">
               {fitScale > 0 && displayW > 0 && displayH > 0 && (

@@ -31,6 +31,12 @@ const items = [
     description:
       "Cidades, masmorras, regiões e pontos de interesse no mapa e na história.",
   },
+  {
+    href: "/mapa-mental",
+    title: "Mapa Mental",
+    description:
+      "Visualização interconectada de tudo o que sabemos, onde os laços da história se formam.",
+  },
 ] as const;
 
 export function CampaignLinkCards() {
@@ -40,7 +46,7 @@ export function CampaignLinkCards() {
         <li key={item.href}>
           <Link
             href={item.href}
-            className="group flex h-full flex-col rounded-xl border border-zinc-200 bg-white/60 p-5 shadow-sm transition hover:border-zinc-300 hover:bg-white hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-zinc-600 dark:hover:bg-zinc-900"
+            className="group flex h-full cursor-pointer flex-col rounded-xl border border-zinc-200 bg-white/60 p-5 shadow-sm transition hover:border-zinc-300 hover:bg-white hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-zinc-600 dark:hover:bg-zinc-900"
           >
             <span className="text-base font-semibold text-zinc-900 group-hover:text-zinc-950 dark:text-zinc-50 dark:group-hover:text-white">
               {item.title}
