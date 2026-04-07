@@ -161,6 +161,7 @@ export default function MindMapViewer() {
   }, [data.nodes]);
 
   const [detailNode, setDetailNode] = useState<MindMapNode | null>(null);
+  const [legendExpanded, setLegendExpanded] = useState(true);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const hoverBoostRef = useRef(1);
   /** Incrementa a cada frame da animação de hover para o grafo redesenhar o canvas. */
@@ -594,19 +595,54 @@ export default function MindMapViewer() {
           </div>
         </div>
       ) : null}
-      <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-col gap-2 rounded-xl border border-violet-500/20 bg-zinc-950/75 p-4 shadow-lg shadow-black/30 backdrop-blur-md">
-        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-violet-200/80">
-          Legenda
-        </h3>
-        {Object.entries(GROUP_COLORS).map(([group, color]) => (
-          <div key={group} className="flex items-center gap-2">
-            <span
-              className="w-3 h-3 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.25)]"
-              style={{ backgroundColor: color }}
-            />
-            <span className="text-sm font-medium text-zinc-200">{group}</span>
-          </div>
-        ))}
+      <div className="pointer-events-auto absolute left-4 top-4 z-10 min-w-44 rounded-xl border border-violet-500/20 bg-zinc-950/75 shadow-lg shadow-black/30 backdrop-blur-md">
+        <button
+          type="button"
+          onClick={() => setLegendExpanded((v) => !v)}
+          className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left transition hover:bg-violet-950/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+          aria-expanded={legendExpanded}
+          aria-controls="mind-map-legend-items"
+          aria-label={legendExpanded ? "Recolher legenda" : "Expandir legenda"}
+          id="mind-map-legend-toggle"
+        >
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-violet-200/80">
+            Legenda
+          </h3>
+          <span
+            className={`text-violet-300/90 transition-transform duration-200 ${legendExpanded ? "rotate-180" : ""}`}
+            aria-hidden
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </span>
+        </button>
+        <div
+          id="mind-map-legend-items"
+          role="region"
+          aria-labelledby="mind-map-legend-toggle"
+          hidden={!legendExpanded}
+          className="flex flex-col gap-2 border-t border-violet-500/15 px-3 pb-3 pt-2"
+        >
+          {Object.entries(GROUP_COLORS).map(([group, color]) => (
+            <div key={group} className="flex items-center gap-2">
+              <span
+                className="h-3 w-3 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.25)]"
+                style={{ backgroundColor: color }}
+              />
+              <span className="text-sm font-medium text-zinc-200">{group}</span>
+            </div>
+          ))}
+        </div>
       </div>
       <MindMapNodeModal node={detailNode} onClose={() => setDetailNode(null)} />
     </div>
