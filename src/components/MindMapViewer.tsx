@@ -51,6 +51,8 @@ type Particle = {
 };
 
 const NODE_MAP_SCALE = 1.25;
+const ZOOM_TO_FIT_MS = 800;
+const ZOOM_TO_FIT_PADDING = 120 * NODE_MAP_SCALE;
 const BASE_NODE_RADIUS = 25;
 const LABEL_FONT_MIN = 10 * NODE_MAP_SCALE;
 const HOVER_SCALE_MAX = 1.36;
@@ -313,6 +315,15 @@ export default function MindMapViewer() {
     [data.nodes, dimensions.width],
   );
 
+  const resetMindMapView = useCallback(() => {
+    graphRef.current?.zoomToFit(ZOOM_TO_FIT_MS, ZOOM_TO_FIT_PADDING);
+  }, []);
+
+  const closeDetailNode = useCallback(() => {
+    resetMindMapView();
+    setDetailNode(null);
+  }, [resetMindMapView]);
+
   const handleNodeClick = useCallback(
     (node: GraphNode, ev: MouseEvent) => {
       const picked = pickNodeFromClientPointer(ev) ?? node;
@@ -344,10 +355,10 @@ export default function MindMapViewer() {
         }
         setTimeout(() => setDetailNode(picked), 300);
       } else {
-        setDetailNode(null);
+        closeDetailNode();
       }
     },
-    [pickNodeFromClientPointer],
+    [pickNodeFromClientPointer, closeDetailNode],
   );
 
   useEffect(() => {
@@ -772,7 +783,7 @@ export default function MindMapViewer() {
           warmupTicks={120}
           onEngineStop={() => {
             if (graphRef.current && !zoomedRef.current) {
-              graphRef.current.zoomToFit(800, 120 * NODE_MAP_SCALE);
+              graphRef.current.zoomToFit(ZOOM_TO_FIT_MS, ZOOM_TO_FIT_PADDING);
               zoomedRef.current = true;
             }
           }}
@@ -896,7 +907,7 @@ export default function MindMapViewer() {
 
       <MindMapNodeModal
         node={detailNode}
-        onClose={() => setDetailNode(null)}
+        onClose={closeDetailNode}
         adjacencyMap={adjacencyMap}
         nodeById={nodeById}
       />
