@@ -2,38 +2,17 @@
 
 import { useEffect, useRef } from "react";
 
-type MindMapUniverseBackdropProps = {
-  width: number;
-  height: number;
-};
-
 /**
- * Fundo “universo”: gradiente profundo, nebulosas com blur em movimento lento
+ * Fundo "universo": gradiente profundo, nebulosas com blur em movimento lento
  * e camada de estrelas com drift + twinkle (canvas).
+ * Não depende de props de dimensão — mede a si mesmo via ResizeObserver.
  */
-export function MindMapUniverseBackdrop({
-  width,
-  height,
-}: MindMapUniverseBackdropProps) {
+export function MindMapUniverseBackdrop() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (width <= 0 || height <= 0) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dpr = Math.min(
-      typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
-      2,
-    );
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     type Star = {
       x: number;
@@ -45,27 +24,57 @@ export function MindMapUniverseBackdrop({
       vy: number;
     };
 
-    const count = Math.min(
-      240,
-      Math.max(80, Math.floor((width * height) / 8500)),
-    );
-    const stars: Star[] = [];
-    for (let i = 0; i < count; i++) {
-      stars.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        r: Math.random() * 1.35 + 0.25,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.55 + Math.random() * 1.35,
-        vx: (Math.random() - 0.5) * 0.055,
-        vy: (Math.random() - 0.5) * 0.055,
-      });
-    }
-
+    let stars: Star[] = [];
+    let width = 0;
+    let height = 0;
     let raf = 0;
     let t = 0;
 
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const resize = (w: number, h: number) => {
+      width = w;
+      height = h;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const count = Math.min(240, Math.max(80, Math.floor((w * h) / 8500)));
+      stars = [];
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 1.35 + 0.25,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.55 + Math.random() * 1.35,
+          vx: (Math.random() - 0.5) * 0.055,
+          vy: (Math.random() - 0.5) * 0.055,
+        });
+      }
+    };
+
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width: w, height: h } = entry.contentRect;
+      if (w > 0 && h > 0) resize(w, h);
+    });
+    ro.observe(canvas);
+
+    // Leitura inicial
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) resize(rect.width, rect.height);
+
     const draw = () => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx || width <= 0 || height <= 0) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
       t += 1 / 55;
       ctx.clearRect(0, 0, width, height);
 
@@ -91,14 +100,15 @@ export function MindMapUniverseBackdrop({
     };
 
     raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, [width, height]);
-
-  if (width <= 0 || height <= 0) return null;
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, []);
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
       aria-hidden
     >
       <div className="absolute inset-0 bg-linear-to-br from-[#05030d] via-[#0a0635] to-[#160d2e]" />

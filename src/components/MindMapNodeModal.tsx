@@ -16,16 +16,44 @@ const GROUP_BADGE: Record<string, string> = {
   Sessão: "bg-violet-500/20 text-violet-200 ring-violet-500/30",
 };
 
+const GROUP_COLORS: Record<string, string> = {
+  Personagem: "#ef4444",
+  Pessoa: "#3b82f6",
+  Facção: "#eab308",
+  Local: "#10b981",
+  Sessão: "#8b5cf6",
+};
+
+type GraphNode = MindMapNode & { x?: number; y?: number };
+
 type MindMapNodeModalProps = {
   node: MindMapNode | null;
   onClose: () => void;
+  adjacencyMap?: Map<string, Set<string>>;
+  nodeById?: Map<string, GraphNode>;
 };
 
-export function MindMapNodeModal({ node, onClose }: MindMapNodeModalProps) {
+export function MindMapNodeModal({
+  node,
+  onClose,
+  adjacencyMap,
+  nodeById,
+}: MindMapNodeModalProps) {
   const detail = useMemo(
     () => (node ? getMindMapNodeDetail(node) : null),
     [node],
   );
+
+  // Connected nodes list
+  const connectedNodes = useMemo<GraphNode[]>(() => {
+    if (!node || !adjacencyMap || !nodeById) return [];
+    const neighbors = adjacencyMap.get(node.id);
+    if (!neighbors) return [];
+    return Array.from(neighbors)
+      .map((id) => nodeById.get(id))
+      .filter((n): n is GraphNode => n !== undefined)
+      .sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
+  }, [node, adjacencyMap, nodeById]);
 
   useEffect(() => {
     if (!node) return;
@@ -47,7 +75,7 @@ export function MindMapNodeModal({ node, onClose }: MindMapNodeModalProps) {
       role="dialog"
       aria-modal
       aria-labelledby="mind-map-modal-title"
-      className="fixed inset-0 z-[200] flex items-center justify-center"
+      className="fixed inset-0 z-200 flex items-center justify-center"
       style={{
         paddingTop: "max(1rem, env(safe-area-inset-top))",
         paddingRight: "max(1rem, env(safe-area-inset-right))",
@@ -62,9 +90,10 @@ export function MindMapNodeModal({ node, onClose }: MindMapNodeModalProps) {
         onClick={onClose}
       />
       <div
-        className="relative z-[1] flex max-h-[min(88vh,900px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-violet-500/30 bg-zinc-950 shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_25px_80px_rgba(0,0,0,0.65)]"
+        className="relative z-1 flex max-h-[min(88vh,900px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-violet-500/30 bg-zinc-950 shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_25px_80px_rgba(0,0,0,0.65)]"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-zinc-800/80 px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
             <p
@@ -94,9 +123,10 @@ export function MindMapNodeModal({ node, onClose }: MindMapNodeModalProps) {
           </button>
         </div>
 
+        {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
           {detail.image ? (
-            <div className="relative mx-auto mb-5 aspect-[3/4] w-full max-w-xs overflow-hidden rounded-xl border border-zinc-700/50 bg-zinc-900 sm:max-w-sm">
+            <div className="relative mx-auto mb-5 aspect-3/4 w-full max-w-xs overflow-hidden rounded-xl border border-zinc-700/50 bg-zinc-900 sm:max-w-sm">
               <Image
                 src={detail.image.src}
                 alt={detail.image.alt}
@@ -132,9 +162,7 @@ export function MindMapNodeModal({ node, onClose }: MindMapNodeModalProps) {
                   <p>
                     <CampaignRichText
                       text={p}
-                      variant={
-                        detail.group === "Sessão" ? "session" : "default"
-                      }
+                      variant={detail.group === "Sessão" ? "session" : "default"}
                       selfHref={detail.pageHref}
                     />
                   </p>
@@ -150,8 +178,39 @@ export function MindMapNodeModal({ node, onClose }: MindMapNodeModalProps) {
               ))}
             </div>
           )}
+
+          {/* Connected nodes */}
+          {connectedNodes.length > 0 && (
+            <div className="mt-6 border-t border-zinc-800/60 pt-5">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                Conexões ({connectedNodes.length})
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {connectedNodes.map((n) => {
+                  const color = GROUP_COLORS[n.group] ?? "#71717a";
+                  const nDetail = getMindMapNodeDetail(n);
+                  return (
+                    <Link
+                      key={n.id}
+                      href={nDetail.pageHref}
+                      className="group flex items-center gap-2 rounded-full border border-zinc-700/60 bg-zinc-900/80 px-3 py-1.5 text-sm text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-800 hover:text-zinc-100"
+                      title={`${n.group}: ${n.name}`}
+                    >
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: color }}
+                        aria-hidden
+                      />
+                      <span>{n.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Footer */}
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-zinc-800/80 px-5 py-4 sm:px-6">
           <button
             type="button"

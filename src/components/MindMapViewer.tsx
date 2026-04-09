@@ -1,11 +1,19 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import {
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import ForceGraph2D, { ForceGraphMethods } from "react-force-graph-2d";
 import {
   generateMindMapData,
   MindMapNode,
   MindMapGraphData,
+  MindMapGroup,
 } from "@/lib/mind-map";
 import { MindMapUniverseBackdrop } from "@/components/MindMapUniverseBackdrop";
 import { MindMapNodeModal } from "@/components/MindMapNodeModal";
@@ -22,6 +30,8 @@ const GROUP_COLORS: Record<string, string> = {
   Sessão: "#8b5cf6", // violet-500
 };
 
+const ALL_GROUPS = Object.keys(GROUP_COLORS) as MindMapGroup[];
+
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace("#", "");
   if (h.length !== 6) return `rgba(161, 161, 170, ${alpha})`;
@@ -33,18 +43,16 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 type GraphNode = MindMapNode & { x?: number; y?: number };
+type Particle = {
+  srcId: string;
+  tgtId: string;
+  progress: number;
+  speed: number;
+};
 
-/**
- * Aumenta um pouco círculos, texto dos rótulos e espessura das arestas.
- * Subir para ~1.2 se quiser ainda maior; 1 = tamanho “antigo”.
- */
 const NODE_MAP_SCALE = 1.25;
-
 const BASE_NODE_RADIUS = 25;
-/** Tamanho mínimo do rótulo (px no espaço da tela), antes de dividir pelo zoom. */
 const LABEL_FONT_MIN = 10 * NODE_MAP_SCALE;
-
-/** Escala visual no hover (1 = normal). */
 const HOVER_SCALE_MAX = 1.36;
 
 function graphNodeRadius(node: GraphNode): number {
@@ -61,7 +69,6 @@ function effectiveNodeRadius(
   return base;
 }
 
-/** Fase estável por id (oscilação não fica em “sincronia robótica”). */
 function floatPhaseFromId(id: string): number {
   let h = 0;
   for (let i = 0; i < id.length; i++) {
@@ -70,9 +77,6 @@ function floatPhaseFromId(id: string): number {
   return ((h & 0xffff) / 0xffff) * Math.PI * 2;
 }
 
-/**
- * Deslocamento no plano XY: órbita quase circular + leve harmônico (menos “robótico”).
- */
 function mindMapFloatOffset(
   id: string,
   tSec: number,
@@ -89,11 +93,6 @@ function mindMapFloatOffset(
   return { ox, oy };
 }
 
-/**
- * Distância do clique ao “alvo” do nó (círculo ou centro do rótulo); null = fora.
- * Sempre usa o raio base (sem hover): se usássemos o raio ampliado do nó já em
- * hover, a área grande “roubava” o cursor dos vizinhos e o efeito não aparecia.
- */
 function pointerDistanceScore(
   gx: number,
   gy: number,
@@ -152,20 +151,98 @@ export default function MindMapViewer() {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const zoomedRef = useRef(false);
+
   const nodeById = useMemo(() => {
     const m = new Map<string, GraphNode>();
-    for (const n of data.nodes as GraphNode[]) {
-      m.set(n.id, n);
-    }
+    for (const n of data.nodes as GraphNode[]) m.set(n.id, n);
     return m;
   }, [data.nodes]);
+
+  // Adjacency map: nodeId -> Set of connected nodeIds
+  const adjacencyMap = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const n of data.nodes) {
+      m.set(n.id, new Set());
+    }
+    for (const l of data.links) {
+      const src =
+        typeof l.source === "string" ? l.source : (l.source as GraphNode).id;
+      const tgt =
+        typeof l.target === "string" ? l.target : (l.target as GraphNode).id;
+      m.get(src)?.add(tgt);
+      m.get(tgt)?.add(src);
+    }
+    return m;
+  }, [data]);
+
+  // Connection count per node
+  const connectionCount = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const [id, neighbors] of adjacencyMap) {
+      m.set(id, neighbors.size);
+    }
+    return m;
+  }, [adjacencyMap]);
 
   const [detailNode, setDetailNode] = useState<MindMapNode | null>(null);
   const [legendExpanded, setLegendExpanded] = useState(true);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const hoverBoostRef = useRef(1);
-  /** Incrementa a cada frame da animação de hover para o grafo redesenhar o canvas. */
   const [hoverPaintTick, setHoverPaintTick] = useState(0);
+
+  // Active filter groups (empty = show all)
+  const [activeFilters, setActiveFilters] = useState<Set<MindMapGroup>>(
+    new Set(),
+  );
+
+  const toggleFilter = useCallback((group: MindMapGroup) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
+    });
+  }, []);
+
+  // Particle system for animated edges
+  const particlesRef = useRef<Particle[]>([]);
+
+  useEffect(() => {
+    const particles: Particle[] = [];
+    for (const l of data.links) {
+      const src =
+        typeof l.source === "string" ? l.source : (l.source as GraphNode).id;
+      const tgt =
+        typeof l.target === "string" ? l.target : (l.target as GraphNode).id;
+      const count = Math.random() < 0.4 ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          srcId: src,
+          tgtId: tgt,
+          progress: Math.random(),
+          speed: 0.0018 + Math.random() * 0.0022,
+        });
+      }
+    }
+    particlesRef.current = particles;
+  }, [data.links]);
+
+  // Advance particles in a separate RAF loop so linkCanvasObject only reads
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      for (const p of particlesRef.current) {
+        p.progress += p.speed;
+        if (p.progress > 1) p.progress -= 1;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   useEffect(() => {
     const target = hoveredNodeId ? HOVER_SCALE_MAX : 1;
@@ -187,39 +264,35 @@ export default function MindMapViewer() {
     return () => cancelAnimationFrame(raf);
   }, [hoveredNodeId]);
 
-  /** Tooltip alinhado ao picking geométrico (o nativo do force-graph usa o canvas de sombra). */
   const [nodeTooltip, setNodeTooltip] = useState<{
     x: number;
     y: number;
     name: string;
     group: string;
+    connections: number;
   } | null>(null);
 
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        setDimensions({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight,
-        });
-      }
-    };
-    updateDimensions();
-
-    window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setDimensions({ width, height });
+    });
+    ro.observe(el);
+    setDimensions({ width: el.clientWidth, height: el.clientHeight });
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
     if (!graphRef.current || dimensions.width <= 0) return;
-    // Repulsão forte = nós mais espaçados (evita “bola” ilegível).
     graphRef.current.d3Force("charge")?.strength(-3200);
-    // Distância alvo maior ao longo de cada aresta.
     graphRef.current.d3Force("link")?.distance(100);
     graphRef.current.d3ReheatSimulation();
   }, [data, dimensions.width]);
 
-  /** Navegação por geometria no espaço do grafo — mais confiável que o hit por cor do canvas. */
   const pickNodeFromClientPointer = useCallback(
     (ev: Pick<MouseEvent, "clientX" | "clientY">): GraphNode | null => {
       const fg = graphRef.current;
@@ -243,7 +316,16 @@ export default function MindMapViewer() {
   const handleNodeClick = useCallback(
     (node: GraphNode, ev: MouseEvent) => {
       const picked = pickNodeFromClientPointer(ev) ?? node;
-      setDetailNode(picked);
+      // Animate zoom to node before opening modal
+      if (
+        graphRef.current &&
+        picked.x !== undefined &&
+        picked.y !== undefined
+      ) {
+        graphRef.current.centerAt(picked.x, picked.y, 600);
+        graphRef.current.zoom(2.8, 600);
+      }
+      setTimeout(() => setDetailNode(picked), 300);
     },
     [pickNodeFromClientPointer],
   );
@@ -251,20 +333,28 @@ export default function MindMapViewer() {
   const handleBackgroundClick = useCallback(
     (ev: MouseEvent) => {
       const picked = pickNodeFromClientPointer(ev);
-      if (picked) setDetailNode(picked);
-      else setDetailNode(null);
+      if (picked) {
+        if (
+          graphRef.current &&
+          picked.x !== undefined &&
+          picked.y !== undefined
+        ) {
+          graphRef.current.centerAt(picked.x, picked.y, 600);
+          graphRef.current.zoom(2.8, 600);
+        }
+        setTimeout(() => setDetailNode(picked), 300);
+      } else {
+        setDetailNode(null);
+      }
     },
     [pickNodeFromClientPointer],
   );
 
-  // Cursor + tooltip: mesma lógica do clique (picking geométrico). O tooltip nativo do
-  // force-graph depende do canvas de sombra e falha nos mesmos casos que o hover antigo.
   useEffect(() => {
     const root = containerRef.current;
     if (!root || dimensions.width <= 0) return;
 
     const onPointerMove = (ev: Pick<PointerEvent, "clientX" | "clientY">) => {
-      // O primeiro `canvas` no container é o do MindMapUniverseBackdrop; o do grafo está em .force-graph-container.
       const graphCanvas = root.querySelector<HTMLCanvasElement>(
         ".force-graph-container canvas",
       );
@@ -283,6 +373,7 @@ export default function MindMapViewer() {
           y: ev.clientY,
           name: picked.name,
           group: picked.group,
+          connections: connectionCount.get(picked.id) ?? 0,
         });
       } else {
         setNodeTooltip(null);
@@ -305,7 +396,26 @@ export default function MindMapViewer() {
       root.removeEventListener("pointermove", onPointerMove);
       root.removeEventListener("pointerleave", onLeave);
     };
-  }, [dimensions.width, pickNodeFromClientPointer]);
+  }, [dimensions.width, pickNodeFromClientPointer, connectionCount]);
+
+  // Determine if a node is "dimmed" based on active filters
+  const isNodeDimmed = useCallback(
+    (node: GraphNode): boolean => {
+      if (activeFilters.size === 0) return false;
+      return !activeFilters.has(node.group as MindMapGroup);
+    },
+    [activeFilters],
+  );
+
+  // Whether a node is "highlighted" (connected to hovered node)
+  const isNodeHighlighted = useCallback(
+    (node: GraphNode): boolean => {
+      if (!hoveredNodeId) return false;
+      if (node.id === hoveredNodeId) return true;
+      return adjacencyMap.get(hoveredNodeId)?.has(node.id) ?? false;
+    },
+    [hoveredNodeId, adjacencyMap],
+  );
 
   const nodePointerAreaPaint = useCallback(
     (
@@ -325,7 +435,6 @@ export default function MindMapViewer() {
       ctx.arc(nodeX, nodeY, r + 4, 0, 2 * Math.PI, false);
       ctx.fill();
 
-      // Incluir o rótulo abaixo do nó (mesma lógica que nodeCanvasObject), senão o clique no nome não funciona.
       const label = node.name;
       const fontSize = Math.max(LABEL_FONT_MIN / globalScale, 4);
       ctx.font = `600 ${fontSize}px Inter, sans-serif`;
@@ -338,7 +447,7 @@ export default function MindMapViewer() {
   );
 
   const linkPointerAreaPaint = useCallback(() => {
-    // Desativa a área de clique nas arestas para que links não roubem o "hover" dos nós nas áreas muito conexas!
+    // Disable link click area so links don't steal hover from nodes
   }, []);
 
   const nodeCanvasObject = useCallback(
@@ -349,25 +458,57 @@ export default function MindMapViewer() {
       const { ox, oy } = mindMapFloatOffset(node.id, tSec);
       const nodeX = (node.x ?? 0) + ox;
       const nodeY = (node.y ?? 0) + oy;
+      const color = GROUP_COLORS[node.group] || "#71717a";
 
-      // Draw Border Circle
+      const dimmed = isNodeDimmed(node);
+      const highlighted = isNodeHighlighted(node);
+      // If hovering and not highlighted, dim the node
+      const darken = hoveredNodeId !== null && !highlighted;
+
+      const globalAlpha = dimmed ? 0.18 : darken ? 0.3 : 1;
+      ctx.save();
+      ctx.globalAlpha = globalAlpha;
+
+      // --- Glow pulsante ---
+      const isHovered = node.id === hoveredNodeId;
+      if (!dimmed && !darken) {
+        // Outer glow: pulses continuously
+        const glowPulse =
+          0.45 + 0.35 * Math.sin(tSec * 2.1 + floatPhaseFromId(node.id));
+        const glowRadius = r * (isHovered ? 2.4 : 1.75);
+        const gradient = ctx.createRadialGradient(
+          nodeX,
+          nodeY,
+          r * 0.5,
+          nodeX,
+          nodeY,
+          glowRadius,
+        );
+        gradient.addColorStop(
+          0,
+          hexToRgba(color, isHovered ? glowPulse * 0.72 : glowPulse * 0.42),
+        );
+        gradient.addColorStop(1, hexToRgba(color, 0));
+        ctx.beginPath();
+        ctx.arc(nodeX, nodeY, glowRadius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      }
+
+      // --- Border ring ---
       ctx.beginPath();
       ctx.arc(nodeX, nodeY, r + 1.5, 0, 2 * Math.PI, false);
-      ctx.fillStyle = GROUP_COLORS[node.group] || "#71717a";
+      ctx.fillStyle = color;
       ctx.fill();
 
-      // Draw Image
+      // --- Image or fallback ---
       if (node.image) {
         const src = node.image;
         if (!imgCache.has(src)) {
           const img = new Image();
           img.src = src;
-          img.onload = () => {
-            // Force re-render if needed? We rely on continuous simulation or just wait
-          };
           imgCache.set(src, img);
         }
-
         const img = imgCache.get(src);
         if (img && img.complete && img.naturalWidth !== 0) {
           ctx.save();
@@ -375,24 +516,16 @@ export default function MindMapViewer() {
           ctx.arc(nodeX, nodeY, r, 0, Math.PI * 2, true);
           ctx.closePath();
           ctx.clip();
-
-          // Cover: preenche o círculo (corta laterais ou parte de baixo conforme o aspect ratio).
-          // Alinhar pelo topo para retratos: mostra cabeça/rosto em vez do “miolo” da foto.
           const ratio = Math.max((r * 2) / img.width, (r * 2) / img.height);
           const nw = img.width * ratio;
           const nh = img.height * ratio;
-          const drawX = nodeX - nw / 2;
-          const drawY = nodeY - r;
-
-          ctx.drawImage(img, drawX, drawY, nw, nh);
+          ctx.drawImage(img, nodeX - nw / 2, nodeY - r, nw, nh);
           ctx.restore();
         } else {
-          // Fallback color while loading
           ctx.beginPath();
           ctx.arc(nodeX, nodeY, r, 0, 2 * Math.PI, false);
           ctx.fillStyle = "#18181b";
           ctx.fill();
-
           ctx.font = `bold ${r * 1.2}px Inter, sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
@@ -400,17 +533,14 @@ export default function MindMapViewer() {
           ctx.fillText(node.name.charAt(0), nodeX, nodeY);
         }
       } else {
-        // Fallback text (e.g. Session "S1")
         ctx.beginPath();
         ctx.arc(nodeX, nodeY, r, 0, 2 * Math.PI, false);
-        ctx.fillStyle = GROUP_COLORS[node.group] || "#18181b";
+        ctx.fillStyle = color;
         ctx.fill();
-
         let innerText = node.name.charAt(0);
         if (node.group === "Sessão") {
           innerText = "S" + node.id.replace("session_", "");
         }
-
         ctx.font = `bold ${r * 0.9}px Inter, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -418,24 +548,23 @@ export default function MindMapViewer() {
         ctx.fillText(innerText, nodeX, nodeY);
       }
 
-      // Draw Text Label external
+      // --- Text label ---
       const label = node.name;
       const fontSize = Math.max(LABEL_FONT_MIN / globalScale, 4);
       ctx.font = `600 ${fontSize}px Inter, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-
-      // Text Shadow
       ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
       ctx.shadowBlur = 4;
       ctx.fillStyle = "#ffffff";
       ctx.fillText(label, nodeX, nodeY + r + fontSize);
-      ctx.shadowBlur = 0; // reset
+      ctx.shadowBlur = 0;
+
+      ctx.restore();
     },
-    [hoveredNodeId, hoverPaintTick],
+    [hoveredNodeId, hoverPaintTick, isNodeDimmed, isNodeHighlighted],
   );
 
-  /** Cor da aresta = tipo do nó de origem (quem referencia o outro no texto). */
   const linkColor = useCallback(
     (link: object) => {
       const l = link as {
@@ -474,9 +603,9 @@ export default function MindMapViewer() {
         sn.y === undefined ||
         tn.x === undefined ||
         tn.y === undefined
-      ) {
+      )
         return;
-      }
+
       const tSec = performance.now() / 1000;
       const f1 = mindMapFloatOffset(sn.id, tSec);
       const f2 = mindMapFloatOffset(tn.id, tSec);
@@ -485,11 +614,18 @@ export default function MindMapViewer() {
       const x2 = tn.x + f2.ox;
       const y2 = tn.y + f2.oy;
 
+      const snDimmed = isNodeDimmed(sn) || isNodeDimmed(tn);
+      const snHighlighted = isNodeHighlighted(sn) && isNodeHighlighted(tn);
+      const darken = hoveredNodeId !== null && !snHighlighted;
+
+      const baseAlpha = snDimmed ? 0.06 : darken ? 0.12 : 0.62;
+      const hex = (sn.group && GROUP_COLORS[sn.group]) || "#a1a1aa";
+
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.strokeStyle = linkColor(link);
+      ctx.strokeStyle = hexToRgba(hex, baseAlpha);
       ctx.lineWidth = Math.max(
         1.15 * NODE_MAP_SCALE,
         (2.2 * NODE_MAP_SCALE) / globalScale,
@@ -498,8 +634,83 @@ export default function MindMapViewer() {
       ctx.globalAlpha = 0.92;
       ctx.stroke();
       ctx.restore();
+
+      // --- Particles traveling along the link ---
+      if (!snDimmed && !darken) {
+        const particles = particlesRef.current;
+        const isHoverLink = hoveredNodeId === sn.id || hoveredNodeId === tn.id;
+
+        for (const p of particles) {
+          const matchFwd = p.srcId === sn.id && p.tgtId === tn.id;
+          const matchBwd = p.srcId === tn.id && p.tgtId === sn.id;
+          if (!matchFwd && !matchBwd) continue;
+
+          // On hover: force direction away from the hovered node.
+          // The particle always travels from the hovered end toward the other end.
+          let ax1 = x1,
+            ay1 = y1,
+            ax2 = x2,
+            ay2 = y2;
+          let prog = p.progress;
+          if (isHoverLink && hoveredNodeId !== null) {
+            const hoveredIsSrc = hoveredNodeId === sn.id;
+            // Flip so origin is always the hovered node
+            if (!hoveredIsSrc) {
+              ax1 = x2;
+              ay1 = y2;
+              ax2 = x1;
+              ay2 = y1;
+              prog = 1 - prog;
+            }
+          } else if (matchBwd) {
+            // Non-hover: keep consistent direction by always going srcId→tgtId
+            ax1 = x2;
+            ay1 = y2;
+            ax2 = x1;
+            ay2 = y1;
+            prog = 1 - prog;
+          }
+
+          const px = ax1 + (ax2 - ax1) * prog;
+          const py = ay1 + (ay2 - ay1) * prog;
+
+          const particleR = Math.max(
+            isHoverLink ? 2.2 : 1.5,
+            (isHoverLink ? 3.2 : 2.5) / globalScale,
+          );
+          const pAlpha = isHoverLink ? 1.0 : 0.55;
+
+          // Glow trail behind particle
+          const trailLen = isHoverLink ? 0.1 : 0.06;
+          const t0 = Math.max(0, prog - trailLen);
+          const tx0 = ax1 + (ax2 - ax1) * t0;
+          const ty0 = ay1 + (ay2 - ay1) * t0;
+          const trailGrad = ctx.createLinearGradient(tx0, ty0, px, py);
+          trailGrad.addColorStop(0, hexToRgba(hex, 0));
+          trailGrad.addColorStop(1, hexToRgba(hex, pAlpha * 0.65));
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(tx0, ty0);
+          ctx.lineTo(px, py);
+          ctx.strokeStyle = trailGrad;
+          ctx.lineWidth = particleR * 1.4;
+          ctx.lineCap = "round";
+          ctx.stroke();
+          ctx.restore();
+
+          // Particle dot
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(px, py, particleR, 0, Math.PI * 2);
+          ctx.fillStyle = hexToRgba(hex, pAlpha);
+          ctx.shadowColor = hex;
+          ctx.shadowBlur = particleR * (isHoverLink ? 6 : 4);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
     },
-    [linkColor, nodeById, hoverPaintTick],
+    [nodeById, hoverPaintTick, isNodeDimmed, isNodeHighlighted, hoveredNodeId],
   );
 
   if (!data) return null;
@@ -507,12 +718,9 @@ export default function MindMapViewer() {
   return (
     <div
       ref={containerRef}
-      className="relative h-[75vh] w-full overflow-hidden rounded-2xl border border-violet-950/40 bg-[#06040f] shadow-[0_0_0_1px_rgba(139,92,246,0.12),0_25px_80px_-20px_rgba(15,5,40,0.85)]"
+      className="relative h-full w-full overflow-hidden bg-[#06040f]"
     >
-      <MindMapUniverseBackdrop
-        width={dimensions.width}
-        height={dimensions.height}
-      />
+      <MindMapUniverseBackdrop />
       <div className="relative z-1 h-full min-h-0 w-full">
         <ForceGraph2D
           ref={graphRef}
@@ -555,7 +763,7 @@ export default function MindMapViewer() {
           onNodeClick={(node, ev) => handleNodeClick(node as GraphNode, ev)}
           onBackgroundClick={handleBackgroundClick}
           showPointerCursor={false}
-          enableNodeDrag={false} // Evitar que micro-arrastos cancelem o evento de clique
+          enableNodeDrag={false}
           autoPauseRedraw={false}
           linkColor={linkColor}
           linkWidth={2 * NODE_MAP_SCALE}
@@ -564,21 +772,19 @@ export default function MindMapViewer() {
           warmupTicks={120}
           onEngineStop={() => {
             if (graphRef.current && !zoomedRef.current) {
-              // Padding maior = zoom mais afastado, leitura mais confortável.
               graphRef.current.zoomToFit(800, 120 * NODE_MAP_SCALE);
               zoomedRef.current = true;
             }
           }}
         />
       </div>
+
+      {/* Tooltip */}
       {nodeTooltip ? (
         <div
           role="tooltip"
           className="pointer-events-none fixed z-80 max-w-[min(90vw,20rem)] rounded-lg border border-violet-500/25 bg-zinc-950/92 px-3 py-2 text-sm text-zinc-100 shadow-lg shadow-violet-950/40 backdrop-blur-md"
-          style={{
-            left: nodeTooltip.x + 14,
-            top: nodeTooltip.y + 14,
-          }}
+          style={{ left: nodeTooltip.x + 14, top: nodeTooltip.y + 14 }}
         >
           <div className="font-semibold leading-snug text-zinc-50">
             {nodeTooltip.name}
@@ -592,9 +798,20 @@ export default function MindMapViewer() {
               aria-hidden
             />
             <span>{nodeTooltip.group}</span>
+            {nodeTooltip.connections > 0 && (
+              <>
+                <span className="text-zinc-600">·</span>
+                <span className="text-zinc-400">
+                  {nodeTooltip.connections}{" "}
+                  {nodeTooltip.connections === 1 ? "conexão" : "conexões"}
+                </span>
+              </>
+            )}
           </div>
         </div>
       ) : null}
+
+      {/* Legend with filter buttons */}
       <div className="pointer-events-auto absolute left-4 top-4 z-10 min-w-44 rounded-xl border border-violet-500/20 bg-zinc-950/75 shadow-lg shadow-black/30 backdrop-blur-md">
         <button
           type="button"
@@ -631,20 +848,58 @@ export default function MindMapViewer() {
           role="region"
           aria-labelledby="mind-map-legend-toggle"
           hidden={!legendExpanded}
-          className="flex flex-col gap-2 border-t border-violet-500/15 px-3 pb-3 pt-2"
+          className="flex flex-col gap-1.5 border-t border-violet-500/15 px-3 pb-3 pt-2"
         >
-          {Object.entries(GROUP_COLORS).map(([group, color]) => (
-            <div key={group} className="flex items-center gap-2">
-              <span
-                className="h-3 w-3 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.25)]"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-sm font-medium text-zinc-200">{group}</span>
-            </div>
-          ))}
+          {ALL_GROUPS.map((group) => {
+            const color = GROUP_COLORS[group];
+            const isActive = activeFilters.has(group);
+            const hasFilter = activeFilters.size > 0;
+            return (
+              <button
+                key={group}
+                type="button"
+                onClick={() => toggleFilter(group)}
+                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-medium transition
+                  ${isActive ? "bg-zinc-800/80 text-zinc-100" : hasFilter ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-200 hover:bg-zinc-800/50"}
+                `}
+                title={
+                  isActive
+                    ? `Remover filtro: ${group}`
+                    : `Filtrar por: ${group}`
+                }
+              >
+                <span
+                  className={`h-3 w-3 shrink-0 rounded-full transition-all ${isActive ? "scale-125 shadow-[0_0_8px_2px_currentColor]" : "shadow-[0_0_6px_rgba(255,255,255,0.2)]"}`}
+                  style={{
+                    backgroundColor: color,
+                    color: color,
+                  }}
+                />
+                <span>{group}</span>
+                {isActive && (
+                  <span className="ml-auto text-xs text-zinc-400">✓</span>
+                )}
+              </button>
+            );
+          })}
+          {activeFilters.size > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveFilters(new Set())}
+              className="mt-0.5 rounded-md px-2 py-1 text-xs text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
+            >
+              Limpar filtros
+            </button>
+          )}
         </div>
       </div>
-      <MindMapNodeModal node={detailNode} onClose={() => setDetailNode(null)} />
+
+      <MindMapNodeModal
+        node={detailNode}
+        onClose={() => setDetailNode(null)}
+        adjacencyMap={adjacencyMap}
+        nodeById={nodeById}
+      />
     </div>
   );
 }
