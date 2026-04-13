@@ -29,6 +29,8 @@ export const people: PersonEntry[] = [
     paragraphs: [
       "Samus é uma jovem com um peso nos olhos que não combina com a idade. Apareceu na fuga nas favelas de Khenza e ajudou o grupo a escapar dos guardas.",
       "Revelou que o Conselho Mercantil manda na cidade e que Vax é o prefeito atual; a riqueza local se sustém em sacrifícios. Faz parte da resistência “Plebe Rude”.",
+      "Teve seu pai, antigo líder da Plebe Rude, morto por comando de Vax. Desde então assumiu o papel de líder da Plebe Rude quando ainda tinha 9 anos.",
+      "Desabafa com Nordis que não mais quer ser líder, pois é um peso que não consegue suportar mais, desde que assumiu a liderança, nunca teve progresso de verdade."
     ],
   },
   {
@@ -42,7 +44,8 @@ export const people: PersonEntry[] = [
       sizes: "(max-width: 768px) 90vw, (max-width: 1024px) 45vw, 400px",
     },
     paragraphs: [
-      "Vax é o prefeito da cidade de Khenza e associado ao Conselho Mercantil, isso é tudo que se sabe sobre ele."
+      "Vax é o prefeito da cidade de Khenza e associado ao Conselho Mercantil, isso é tudo que se sabe sobre ele.",
+      "Por algum motivo, mesmo aparentemente sendo capaz, deixa a Plebe Rude e Samus continuarem com a resistência."
     ],
   },
   {
@@ -122,8 +125,8 @@ export const people: PersonEntry[] = [
     paragraphs: [
       "Apareceu preso em um posto da cidade de Khenza, ele conta que foi preso por não querer dar dinheiro para o governo e oferceu 50 PO em troca de ser solto.",
       'Seu crime era de sonegação.',
-      'O grupo o soltou.'
-
+      'O grupo o soltou.',
+      "Pede para recuperarem parte de suas finanças em sua casa antes que o governo confisque tudo."
     ],
   },
   {

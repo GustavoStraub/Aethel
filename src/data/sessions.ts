@@ -90,4 +90,30 @@ export const sessions: SessionEntry[] = [
       },
     ],
   },
+  {
+    id: "3",
+    title: "Sessão 3",
+    date: "7 de Maio de 1564",
+    recordingUrl:
+      "https://drive.google.com/file/d/1IWqWQQswh3Ao2zTT4Xp0BzAd7OYZ88Pc/view?usp=drive_link",
+    paragraphs: [
+      "Quando o combate parecia inevitável, Kairos Naerion lança uma magia de teia que prende os guardas no lugar, e o grupo aproveita para correr. Nesse momento, veem um homem de cabelos longos, com uma armadura imponente (Vax). Ele diz algo aos guardas, que desistem da perseguição; alguns, frustrados, jogam as armas no chão.",
+
+      `O grupo segue para as favelas, mas, no meio do caminho, ${blomsSouvenir} tem outra visão das memórias. Desta vez, vê a cidade de Khenza novamente em completo caos: pessoas com o símbolo da Plebe Rude avançam para dentro da cidade, mas o esforço logo se mostra em vão. Corpos caem junto da esperança, que se desfaz ao ver o símbolo coberto de sangue e o rosto daquele homem de cabelos longos.`,
+
+      `Já nas favelas, o grupo decide descansar um pouco. Enquanto isso, ${blomsSouvenir} vai até a cidade e usa sua habilidade para se camuflar no meio das pessoas. Lá, entra na Taverna Arredio, uma taverna intimista, mas com bom movimento. Ouve boatos de que existe uma representante do Conselho Mercantil pressionando Vax por toda a situação da Plebe Rude, e percebe que os moradores também não sabem o motivo de tudo isso.`,
+
+      `Ainda na cidade, passa em uma loja de poções, onde conhece Natus Rimor, um draconato branco de olhos azuis. Natus conta que vai de cidade em cidade tentando abrir uma loja de sucesso e joga uma moeda de cobre para ${blomsSouvenir}.`,
+
+      "Ao mesmo tempo, nas favelas, Kairos Naerion decide olhar seu grimório e encontra algumas anotações sobre uma igreja cuja arquitetura recebe a luz da própria lua. Junto disso, encontra também um rabisco que parece ter sido feito por uma criança. Ele então sai vagando pelas favelas e se depara com uma criança; conversam brevemente, e a criança conta que seus pais brigam, discutindo se devem ficar ou fugir de Khenza. Também diz a Kairos Naerion que o rabisco parece um dragão.",
+
+      "Kairos Naerion, Rhaenyra Elarion e Athena Elarion conversam por alto sobre a situação e sobre o motivo de estarem ali, mas ainda não possuem um vínculo forte o suficiente para compartilhar seus segredos. Nordis decide procurar Samus, enquanto Valerius Vane aguarda e repara o fio de sua lâmina.",
+
+      "Ao encontrar Samus, ela está abatida e diz que não quer ser líder, pois é um peso muito grande. Ela também compartilha com Nordis que muitas pessoas não a querem como líder, mas ninguém quer assumir o posto. Conta que seus amigos, um quer acabar com tudo por força bruta e a outra desconfia dos novos que chegaram; nunca entram em consenso. Nordis tenta acalmá-la e sugere que todos se reúnam para conversar com calma.",
+
+      "O grupo então se reúne novamente e conversa com Samus, que conta que também não sabe o que está acontecendo por trás de tudo. Diz que sua única motivação atual é a vingança pelo pai, que Vax tentou matar. Ao ser questionada, ela diz que conseguiu algumas informações que preferiu não compartilhar com os outros, mas parece que algo acontece na igreja: algum tipo de sacrifício, ou algo relacionado.",
+
+      "Nesse momento, a lua começa a sangrar. Uma grande lua de sangue é vista no céu, iluminando a noite com um brilho vermelho, o que causa um sentimento de opressão nas pessoas; uma sensação de que algo não está certo. Embora luas de sangue sejam um fenômeno natural, esta, em específico, não parecia ser o caso. Eles decidem então se reunir e ir à igreja investigar; antes disso, Nordis pede para Krig Stih e Sighi Leo cuidarem das favelas e ficarem de olho em qualquer coisa. Sighi Leo pede para Nordis, se possível, passar na casa dele para recolher seu dinheiro.",
+    ],
+  },
 ];
