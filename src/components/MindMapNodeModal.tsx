@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useMemo } from "react";
 import { CampaignRichText } from "@/components/CampaignRichText";
+import { SessionInlineImageView } from "@/components/SessionInlineImageView";
 import { SessionInlineTableView } from "@/components/SessionInlineTableView";
 import { getMindMapNodeDetail } from "@/lib/mind-map-node-detail";
 import type { MindMapNode } from "@/lib/mind-map";
@@ -52,7 +53,10 @@ export function MindMapNodeModal({
     return Array.from(neighbors)
       .map((id) => nodeById.get(id))
       .filter((n): n is GraphNode => n !== undefined)
-      .sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
+      .sort(
+        (a, b) =>
+          a.group.localeCompare(b.group) || a.name.localeCompare(b.name),
+      );
   }, [node, adjacencyMap, nodeById]);
 
   useEffect(() => {
@@ -162,10 +166,20 @@ export function MindMapNodeModal({
                   <p>
                     <CampaignRichText
                       text={p}
-                      variant={detail.group === "Sessão" ? "session" : "default"}
+                      variant={
+                        detail.group === "Sessão" ? "session" : "default"
+                      }
                       selfHref={detail.pageHref}
                     />
                   </p>
+                  {detail.inlineImages
+                    ?.filter((img) => img.afterParagraphIndex === i)
+                    .map((img, ii) => (
+                      <SessionInlineImageView
+                        key={`${i}-img-${ii}`}
+                        image={img}
+                      />
+                    ))}
                   {detail.inlineTables
                     ?.filter((t) => t.afterParagraphIndex === i)
                     .map((t, ti) => (

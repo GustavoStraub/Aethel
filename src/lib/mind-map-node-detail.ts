@@ -2,7 +2,11 @@ import { characters } from "@/data/characters";
 import { factions } from "@/data/factions";
 import { locations } from "@/data/locations";
 import { people } from "@/data/people";
-import { sessions, type SessionInlineTable } from "@/data/sessions";
+import {
+  sessions,
+  type SessionInlineImage,
+  type SessionInlineTable,
+} from "@/data/sessions";
 import type { MindMapGroup, MindMapNode } from "@/lib/mind-map";
 
 export type MindMapNodeDetail = {
@@ -22,6 +26,8 @@ export type MindMapNodeDetail = {
   recordingUrl?: string;
   /** Sessão: tabelas após parágrafos (como no livro de sessões). */
   inlineTables?: SessionInlineTable[];
+  /** Sessão: figuras após parágrafos. */
+  inlineImages?: SessionInlineImage[];
 };
 
 export function getMindMapNodeDetail(node: MindMapNode): MindMapNodeDetail {
@@ -95,6 +101,7 @@ export function getMindMapNodeDetail(node: MindMapNode): MindMapNodeDetail {
         subtitle: s.date,
         recordingUrl: s.recordingUrl,
         inlineTables: s.inlineTables,
+        inlineImages: s.inlineImages,
       };
     }
   }

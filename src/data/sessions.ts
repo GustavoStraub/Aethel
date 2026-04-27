@@ -7,6 +7,14 @@ export type SessionInlineTable = {
   rows: string[][];
 };
 
+/** Imagem inserida após um parágrafo (índice 0-based do array `paragraphs`). */
+export type SessionInlineImage = {
+  afterParagraphIndex: number;
+  src: string;
+  alt: string;
+  caption?: string;
+};
+
 export type SessionEntry = {
   id: string;
   /** Título exibido na “página” do livro (ex.: Sessão 1). */
@@ -15,6 +23,8 @@ export type SessionEntry = {
   date: string;
   paragraphs: string[];
   inlineTables?: SessionInlineTable[];
+  /** Figuras (ex.: símbolos em pergaminhos) após o parágrafo indicado. */
+  inlineImages?: SessionInlineImage[];
   /** Áudio ou gravação em link externo (ex.: Google Drive). Mostrado abaixo da data. */
   recordingUrl?: string;
 };
@@ -114,6 +124,36 @@ export const sessions: SessionEntry[] = [
       "O grupo então se reúne novamente e conversa com Samus, que conta que também não sabe o que está acontecendo por trás de tudo. Diz que sua única motivação atual é a vingança pelo pai, que Vax tentou matar. Ao ser questionada, ela diz que conseguiu algumas informações que preferiu não compartilhar com os outros, mas parece que algo acontece na igreja: algum tipo de sacrifício, ou algo relacionado.",
 
       "Nesse momento, a lua começa a sangrar. Uma grande lua de sangue é vista no céu, iluminando a noite com um brilho vermelho, o que causa um sentimento de opressão nas pessoas; uma sensação de que algo não está certo. Embora luas de sangue sejam um fenômeno natural, esta, em específico, não parecia ser o caso. Eles decidem então se reunir e ir à igreja investigar; antes disso, Nordis pede para Krig Stih e Sighi Leo cuidarem das favelas e ficarem de olho em qualquer coisa. Sighi Leo pede para Nordis, se possível, passar na casa dele para recolher seu dinheiro.",
+    ],
+  },
+  {
+    id: "4",
+    title: "Sessão 4",
+    date: "7 de Maio de 1564",
+    recordingUrl:
+      "https://drive.google.com/file/d/1KlwAcHfSt-6zdUVgJMIott-WZJ8I15Bt/view?usp=sharing",
+    paragraphs: [
+      "O grupo segue até a igreja, guiado pela coruja conjurada por Kairos Naerion, e consegue avançar sem muitos problemas. Ao chegarem, a luz da lua refletia nos vitrais de forma majestosa; porém o que antes seria um brilho claro agora era um vermelho escuro, dificultando espiar o interior.",
+
+      "O grupo decide observar melhor e percebe que um ritual está sendo conduzido lá dentro, com Mundus Jhoca como sacrifício. Kairos Naerion rapidamente usa sua coruja para tentar atrapalhar o ritual, e então seguem para dentro da igreja. Lá, encontram Topolah, que diz querer acabar com Samus e, de brinde, ainda levaria Kairos Naerion. Também afirma reconhecer Valerius Vane. O ritual acontece diante deles, e é possível ver a alma de Mundus sair do próprio corpo.",
+
+      "Em seguida, começa a batalha. Athena Elarion usa sua maça para abrir caminho até Topolah, enquanto Valerius Vane, ao lado, empunha sua espada para fazer o mesmo. Kairos Naerion e Rhaenyra Elarion ficam à distância: um lança magias, enquanto a outra usa seu arco. Nordis se transforma em um potente cavalo de guerra e convida Yunis Armstrong para montar, a fim de chegar direto a Topolah para um ataque direto. Bloms’t Souvenir, por sua vez, fica mais recuado, aguardando o momento certo de agir.",
+
+      "Topolah mantém o foco em Samus e, após algum tempo, fica encurralada. Ela se torna invisível, dando trabalho ao grupo, e então se posiciona para matar Samus com uma grande bola de fogo. Nesse momento, Melinda Harlet lança uma bola de fogo sobre ela, e Athena Elarion dá o golpe final. Assim que Topolah cai, é possível notar um brilho saindo de seu dedo, mais especificamente de um anel que parece ter um coração encravado. Quando esse brilho se apaga, Topolah se levanta viva. Nesse momento, ela e o grupo entram em uma trégua para evitar novas mortes.",
+
+      `Enquanto isso, Valerius Vane segue em direção a uma porta, mais adentro da igreja, onde encontra um pergaminho que diz: «Projeto S. Não darei informações detalhadas, mas deixo ordens. Sempre que a lua estiver vermelha, você se certificará que teremos combustível a uma coisinha que estou criando. Basta fazer o símbolo que estarei deixando abaixo e colocar as criaturas vivas dentro, pronunciar o encantamento: “Anima vincta, vinculis solutis. Ad verum deum, via patet. Non mors, sed translatio. Ex multis, Unus. Ex mortalibus, Veritas!”» — o texto apresenta o trecho em celestial, e abaixo dele o desenho de um símbolo.`,
+
+      "A tradução, seria: «Alma aprisionada, dos grilhões liberta. Para o deus verdadeiro, o caminho está aberto. Não é morte, mas transferência. De muitos, Um. De mortais, a Verdade!»",
+
+      "Valerius Vane também encontra uma espécie de “bola de cristal”. Ao ativá-la, conversa brevemente com Wyrmoth Silthar, que diz ser o líder do Conselho Mercantil e afirma saber do paradeiro de sua mãe.",
+    ],
+    inlineImages: [
+      {
+        afterParagraphIndex: 4,
+        src: "/A marca.png",
+        alt: "Símbolo desenhado no pergaminho do Projeto S",
+        caption: "Símbolo desenhado no pergaminho do 'Projeto S'",
+      },
     ],
   },
 ];

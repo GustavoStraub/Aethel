@@ -4,6 +4,7 @@ import { Literata } from "next/font/google";
 import { useRouter } from "next/router";
 import { Fragment, useCallback, useEffect, useMemo } from "react";
 import { CampaignRichText } from "@/components/CampaignRichText";
+import { SessionInlineImageView } from "@/components/SessionInlineImageView";
 import { SessionInlineTableView } from "@/components/SessionInlineTableView";
 import type { SessionEntry } from "@/data/sessions";
 
@@ -232,6 +233,11 @@ export function SessionBook({ sessions: pages }: SessionBookProps) {
               <p className="text-justify indent-6 first:indent-0">
                 <CampaignRichText text={p} variant="session" />
               </p>
+              {current.inlineImages
+                ?.filter((img) => img.afterParagraphIndex === i)
+                .map((img, ii) => (
+                  <SessionInlineImageView key={`${i}-img-${ii}`} image={img} />
+                ))}
               {current.inlineTables
                 ?.filter((t) => t.afterParagraphIndex === i)
                 .map((t, ti) => (

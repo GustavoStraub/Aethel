@@ -30,7 +30,8 @@ export const people: PersonEntry[] = [
       "Samus é uma jovem com um peso nos olhos que não combina com a idade. Apareceu na fuga nas favelas de Khenza e ajudou o grupo a escapar dos guardas.",
       "Revelou que o Conselho Mercantil manda na cidade e que Vax é o prefeito atual; a riqueza local se sustém em sacrifícios. Faz parte da resistência “Plebe Rude”.",
       "Teve seu pai, antigo líder da Plebe Rude, morto por comando de Vax. Desde então assumiu o papel de líder da Plebe Rude quando ainda tinha 9 anos.",
-      "Desabafa com Nordis que não mais quer ser líder, pois é um peso que não consegue suportar mais, desde que assumiu a liderança, nunca teve progresso de verdade."
+      "Desabafa com Nordis que não mais quer ser líder, pois é um peso que não consegue suportar mais, desde que assumiu a liderança, nunca teve progresso de verdade.",
+      "Teve seu fim na luta na Igreja de Khenza contra Topolah."
     ],
   },
   {
@@ -142,7 +143,43 @@ export const people: PersonEntry[] = [
     paragraphs: [
       'Apareceu preso em um posto da cidade de Khenza, ele repetia apenas "Liberdade, liberdade para as crianças.',
       'Seus crimes estavam listados como homicídios e tortura.',
-      'O grupo não o soltou.'
+      'O grupo não o soltou.',
+      'Teve seu fim em um ritual de sacrifício em uma igreja de Khenza.'
     ],
   },
+  {
+    id: "topolah",
+    name: "Topolah",
+    image: {
+      src: "/People/Topolah.jpg",
+      alt: "Retrato de Topolah",
+      width: 800,
+      height: 1200,
+      sizes: "(max-width: 768px) 90vw, (max-width: 1024px) 45vw, 400px",
+    },
+    paragraphs: [
+      'Apareceu em Khenza, uma representante do Conselho Mercantil.',
+      'Demonstra querer atenção de Vax para si.',
+      'Conduziu um Ritual na Igreja de Khenza, onde sacrificou Mundus Jhoca.',
+      'Seu maior objetivo aparente era matar Samus, e assim o fez.',
+      'Ao ser derrotada, o grupo firmou uma trégua temporária com ela.'
+    ],
+  },
+  {
+    id: "wyrmoth-silthar",
+    name: "Wyrmoth Silthar",
+    image: {
+      src: "/People/Wyrmoth%20Silthar.jpg",
+      alt: "Retrato de Wyrmoth Silthar",
+      width: 800,
+      height: 1200,
+      sizes: "(max-width: 768px) 90vw, (max-width: 1024px) 45vw, 400px",
+    },
+    paragraphs: [
+      'Líder do Conselho Mercantil.',
+      'Apareceu em uma espécie de "bola de cristal" achado na igreja de Khenza.',
+      'Ele diz que conhece Valerius Vane, e que sabe da mãe dele.',
+    ],
+  },
+
 ];

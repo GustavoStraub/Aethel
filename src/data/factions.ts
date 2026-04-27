@@ -29,6 +29,9 @@ export const factions: FactionEntry[] = [
     },
     paragraphs: [
       "O Conselho Mercantil tem seu primeiro contato com o grupo na cidade de Khenza. Pouco se sabe ainda sobre esse Conselho, mas o que se sabe é que Vax faz parte dele e é o prefeito da cidade.",
+      'Wyrmoth Silthar é o líder do Conselho Mercantil.',
+      'Topolah é uma representante do Conselho Mercantil.',
+      'Estão fazendo sacrifícios em prol do "Projeto S".'
     ],
   },
   {
